@@ -1,0 +1,1922 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#172b67">
+  <title>Human Check: The Vibe Check CAPTCHA Arcade</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #fff8e9;
+      --card: #fffdf7;
+      --ink: #172b67;
+      --muted: #646b83;
+      --line: #1b2e6a;
+      --purple: #193277;
+      --purple-dark: #14275f;
+      --lime: #e8b83f;
+      --lime-bright: #ffd359;
+      --coral: #d95c49;
+      --green: #39754b;
+      --green-light: #44925e;
+      --red: #bd433e;
+      --shadow: 4px 4px 0 #172b67;
+      --shadow-lg: 7px 7px 0 #172b67;
+      font-family: "Lucida Console", "Courier New", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        linear-gradient(rgb(185 163 121 / 15%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(185 163 121 / 15%) 1px, transparent 1px),
+        var(--paper);
+      background-size: 18px 18px;
+      image-rendering: pixelated;
+      overflow-x: hidden;
+      font-family: "Lucida Console", "Courier New", ui-monospace, monospace;
+      position: relative;
+    }
+
+    /* Scanline effect layer */
+    body.crt::after {
+      content: " ";
+      display: block;
+      position: fixed;
+      top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%);
+      background-size: 100% 4px;
+      z-index: 999;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    /* Screen shake trigger */
+    .shake {
+      animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
+    }
+
+    @keyframes shake {
+      10%, 90% { transform: translate3d(-2px, 0, 0); }
+      20%, 80% { transform: translate3d(4px, 0, 0); }
+      30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+      40%, 60% { transform: translate3d(6px, 0, 0); }
+    }
+
+    button { font: inherit; }
+    button:focus-visible, [tabindex="0"]:focus-visible {
+      outline: 3px dashed #d29b26;
+      outline-offset: 4px;
+    }
+
+    .site-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 24px;
+      border-bottom: 3px solid var(--ink);
+      background: #fffdf7;
+      box-shadow: 0 4px 0 rgb(23 43 103 / 8%);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      background: #e6b83f;
+      box-shadow: 3px 3px 0 var(--ink);
+      color: var(--ink);
+      font-size: 20px;
+      animation: pulse-glow 2s infinite alternate;
+    }
+
+    @keyframes pulse-glow {
+      0% { box-shadow: 3px 3px 0 var(--ink); }
+      100% { box-shadow: 3px 3px 0 var(--ink), 0 0 12px rgba(230, 184, 63, 0.8); }
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border: 2px solid var(--ink);
+      background: #fff8e9;
+      box-shadow: 3px 3px 0 var(--ink);
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 900;
+      cursor: pointer;
+      transition: transform 0.08s, box-shadow 0.08s, background 0.1s;
+    }
+
+    .icon-btn:hover {
+      background: #fff0c4;
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+
+    .icon-btn:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 var(--ink);
+    }
+
+    .version {
+      padding: 6px 10px;
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      background: #fffdf7;
+      box-shadow: 3px 3px 0 var(--ink);
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 36px));
+      margin: 38px auto 48px;
+    }
+
+    .intro {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 28px;
+    }
+
+    .eyebrow {
+      margin: 0 0 8px;
+      color: #a0781e;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 720px;
+      margin: 0;
+      font-size: clamp(32px, 4.5vw, 54px);
+      font-weight: 900;
+      letter-spacing: -.05em;
+      line-height: 1.05;
+      text-shadow: 2px 2px 0 #e9c96e;
+    }
+
+    h1 span {
+      color: var(--ink);
+      text-shadow: 3px 3px 0 #e9c96e;
+    }
+
+    .disclaimer {
+      display: flex;
+      flex: 0 0 auto;
+      align-items: center;
+      gap: 10px;
+      max-width: 320px;
+      padding: 12px 14px;
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      background: #fffdf7;
+      box-shadow: 3px 3px 0 #d2aa46;
+      color: #4e5874;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.45;
+    }
+
+    .disclaimer-icon { font-size: 16px; }
+
+    .game-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 290px;
+      align-items: stretch;
+      gap: 20px;
+    }
+
+    .game-card, .side-card {
+      border: 3px solid var(--ink);
+      border-radius: 0;
+      background: #fffdf7;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+
+    .game-card {
+      min-height: 520px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .game-top {
+      padding: 18px 22px 14px;
+      border-bottom: 3px solid var(--ink);
+      background: #fff3d5;
+      position: relative;
+      z-index: 1;
+    }
+
+    .game-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .round-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #5b6380;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    .live-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 0;
+      background: #d8a92f;
+      box-shadow: 2px 2px 0 var(--ink);
+      animation: blink 1s steps(2, start) infinite;
+    }
+
+    @keyframes blink {
+      to { visibility: hidden; }
+    }
+
+    .timer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 90px;
+      min-height: 34px;
+      padding: 0 10px;
+      justify-content: center;
+      border: 2px solid var(--ink);
+      background: #fffdf7;
+      box-shadow: 2px 2px 0 #d8b348;
+      font-variant-numeric: tabular-nums;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .timer svg { color: var(--ink); }
+    .timer.is-low {
+      color: var(--red);
+      border-color: var(--red);
+      animation: pulse-red 0.5s infinite alternate;
+    }
+
+    @keyframes pulse-red {
+      from { background: #fffdf7; }
+      to { background: #ffe3e1; }
+    }
+
+    .progress-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      color: #5b6380;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .progress-track {
+      height: 14px;
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      background: #fffdf7;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 0;
+      height: 100%;
+      background: repeating-linear-gradient(90deg, #243d86 0 10px, #35539a 10px 12px);
+      transition: width 0.3s steps(8, end);
+    }
+
+    .challenge-content {
+      padding: 26px 28px 28px;
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .challenge-kicker {
+      margin: 0 0 8px;
+      color: #a0781e;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(22px, 3vw, 30px);
+      font-weight: 900;
+      letter-spacing: -.03em;
+      line-height: 1.15;
+    }
+
+    .challenge-copy {
+      margin: 10px 0 20px;
+      color: #5d6379;
+      font-size: 12px;
+      line-height: 1.6;
+      font-weight: 600;
+    }
+
+    /* Primary and Secondary Arcade Buttons */
+    .primary-button, .secondary-button {
+      min-height: 48px;
+      padding: 0 20px;
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      box-shadow: 3px 3px 0 #d8b348;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      transition: transform 0.08s steps(2, end), box-shadow 0.08s steps(2, end), background 0.1s;
+    }
+
+    .primary-button {
+      background: var(--ink);
+      color: #fff8e9;
+      margin-top: auto;
+      align-self: flex-start;
+    }
+
+    .primary-button:hover {
+      transform: translate(2px, 2px);
+      background: #29417f;
+      box-shadow: 1px 1px 0 #d8b348;
+    }
+
+    .secondary-button {
+      background: #fffdf7;
+      color: var(--ink);
+    }
+
+    .secondary-button:hover {
+      transform: translate(2px, 2px);
+      background: #fff2d0;
+      box-shadow: 1px 1px 0 #d8b348;
+    }
+
+    /* Wire Challenge Game */
+    .wire-board {
+      position: relative;
+      margin: 12px 0;
+      border: 3px solid var(--ink);
+      background:
+        linear-gradient(rgb(185 163 121 / 15%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(185 163 121 / 15%) 1px, transparent 1px),
+        #fff8e9;
+      background-size: 17px 17px;
+      box-shadow: 4px 4px 0 #d8b348;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .wire-board svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 600 / 235;
+      overflow: visible;
+    }
+
+    .wire-track-shadow, .wire-track, .wire-progress {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .wire-track-shadow { stroke: #eddfbb; stroke-width: 18; }
+    .wire-track { stroke: #20397d; stroke-width: 9; }
+    .wire-progress { stroke: #e3b643; stroke-width: 9; }
+    .wire-start { fill: #fffdf7; stroke: #20397d; stroke-width: 4; }
+    .wire-end { fill: #e9bd4c; stroke: #172b67; stroke-width: 4; }
+
+    .wire-knob {
+      fill: #fffdf7;
+      stroke: #172b67;
+      stroke-width: 3;
+      cursor: grab;
+      touch-action: none;
+    }
+
+    .wire-knob:active { cursor: grabbing; }
+    .wire-knob-halo { fill: rgb(230 184 63 / 35%); }
+
+    .wire-instructions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: #5d6379;
+      font-size: 11px;
+    }
+
+    .wire-instructions strong, .wire-hint { color: var(--ink); font-weight: 900; }
+
+    /* Interactive Game Area Wrappers */
+    .playfield {
+      position: relative;
+      min-height: 200px;
+      margin-top: 14px;
+      overflow: hidden;
+      border: 3px solid var(--ink);
+      background-color: #fff8e9;
+      background-image: linear-gradient(rgb(185 163 121 / 15%) 1px, transparent 1px), linear-gradient(90deg, rgb(185 163 121 / 15%) 1px, transparent 1px);
+      background-size: 17px 17px;
+      box-shadow: 4px 4px 0 #d8b348;
+      touch-action: none;
+    }
+
+    .game-instruction {
+      margin: 12px 0 0;
+      color: #5d6379;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.5;
+    }
+
+    /* Elevator Hold Meter */
+    .meter-track {
+      height: 24px;
+      margin: 16px 0 12px;
+      border: 3px solid var(--ink);
+      background: repeating-linear-gradient(90deg, #fffdf7 0 9px, #f3e8c9 9px 12px);
+    }
+
+    .meter-fill {
+      width: 0;
+      height: 100%;
+      background: repeating-linear-gradient(90deg, #31528f 0 10px, #4969a3 10px 13px);
+      transition: width 0.08s linear;
+    }
+
+    .hold-button, .stop-button, .send-button, .direction-button {
+      min-height: 48px;
+      padding: 0 18px;
+      border: 3px solid var(--ink);
+      background: #fffdf7;
+      box-shadow: 3px 3px 0 #d8b348;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 900;
+      touch-action: manipulation;
+      user-select: none;
+      text-transform: uppercase;
+    }
+
+    .hold-button:active, .stop-button:active, .send-button:active, .direction-button:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 #d8b348;
+    }
+
+    .hold-button { min-width: 220px; background: #fff0c4; }
+    .hold-button.is-holding { background: #d8e7c9; }
+
+    /* Rewind slider */
+    .rewind-control { margin-top: 18px; }
+    .rewind-control input {
+      width: 100%;
+      height: 24px;
+      accent-color: #20397d;
+      cursor: pointer;
+    }
+
+    .rewind-labels {
+      display: flex;
+      justify-content: space-between;
+      color: #596079;
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    /* Moving Target / Paparazzi */
+    .target-board { min-height: 220px; }
+    .moving-target {
+      position: absolute;
+      display: grid;
+      width: 66px;
+      height: 66px;
+      place-items: center;
+      border: 3px solid var(--ink);
+      background: #f4d47f;
+      box-shadow: 4px 4px 0 var(--ink);
+      cursor: pointer;
+      font-size: 30px;
+      transition: left 0.15s steps(3, end), top 0.15s steps(3, end), transform 0.1s;
+      user-select: none;
+    }
+
+    .moving-target:active { transform: scale(0.88); }
+    .hit-counter { margin-top: 12px; font-size: 11px; font-weight: 900; letter-spacing: 0.05em; }
+
+    /* Microwave Game */
+    .microwave-clock {
+      margin: 0 0 12px;
+      color: var(--ink);
+      font-size: clamp(36px, 7vw, 48px);
+      font-weight: 900;
+      letter-spacing: .08em;
+      text-shadow: 2px 2px 0 #e9c96e;
+    }
+
+    .microwave-track {
+      position: relative;
+      height: 32px;
+      margin: 14px 0 18px;
+      border: 3px solid var(--ink);
+      background: linear-gradient(90deg, #dce8d2 0 60%, #f4d47f 60% 95%, #e89975 95%);
+    }
+
+    .microwave-needle {
+      position: absolute;
+      top: -4px;
+      left: 0;
+      width: 6px;
+      height: 34px;
+      background: var(--ink);
+      box-shadow: 0 0 4px rgba(0,0,0,0.5);
+    }
+
+    /* Popups Escape Game */
+    .popups-field { min-height: 230px; }
+    .popup-note {
+      position: absolute;
+      width: min(200px, 46%);
+      min-height: 70px;
+      padding: 10px 30px 10px 10px;
+      border: 2px solid var(--ink);
+      background: #fffdf7;
+      box-shadow: 3px 3px 0 #d8b348;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.4;
+      animation: popup-in 0.15s steps(3, end);
+    }
+
+    .popup-close {
+      position: absolute;
+      top: 2px;
+      right: 3px;
+      border: 0;
+      background: transparent;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    /* Typing Game */
+    .typing-prompt {
+      padding: 14px;
+      border: 2px dashed var(--ink);
+      background: #fff3d5;
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .typing-row { display: flex; gap: 8px; margin-top: 12px; }
+    .typing-input {
+      flex: 1;
+      min-width: 0;
+      min-height: 48px;
+      padding: 8px 12px;
+      border: 3px solid var(--ink);
+      background: #fffdf7;
+      color: var(--ink);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    /* Dodge Game */
+    .dodge-field { min-height: 240px; }
+    .dodge-player {
+      position: absolute;
+      bottom: 12px;
+      left: 45%;
+      z-index: 2;
+      width: 48px;
+      height: 44px;
+      border: 3px solid var(--ink);
+      background: #e6b83f;
+      box-shadow: 3px 3px 0 var(--ink);
+      font-size: 23px;
+      text-align: center;
+      line-height: 38px;
+    }
+
+    .dodge-player.is-hit { background: #f3c0a8; animation: hit-flash 0.2s steps(2, end); }
+
+    @keyframes hit-flash {
+      50% { opacity: 0.3; }
+    }
+
+    .falling-object {
+      position: absolute;
+      top: -34px;
+      z-index: 1;
+      font-size: 26px;
+      line-height: 1;
+      will-change: top;
+    }
+
+    .dodge-controls { display: flex; justify-content: center; gap: 12px; margin-top: 10px; }
+    .direction-button { min-width: 90px; }
+
+    /* Side Column / Step Progress */
+    .side-card {
+      display: flex;
+      flex-direction: column;
+      padding: 22px;
+    }
+
+    .side-title {
+      margin: 0 0 6px;
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+    }
+
+    .side-caption {
+      margin: 0 0 18px;
+      color: #6c7183;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .steps { display: grid; gap: 9px; }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-height: 52px;
+      padding: 8px 10px;
+      border: 2px solid var(--ink);
+      border-radius: 0;
+      background: #fffdf7;
+      box-shadow: 2px 2px 0 #e2c36d;
+      color: var(--ink);
+      transition: background .15s, transform .15s;
+    }
+
+    .step-item.is-active {
+      background: #fff0c4;
+      box-shadow: 3px 3px 0 #d0a73a;
+      transform: translate(-1px, -1px);
+    }
+
+    .step-item.is-done .step-number {
+      background: #d8e7c9;
+      color: #315f39;
+    }
+
+    .step-number {
+      display: grid;
+      flex: 0 0 28px;
+      width: 28px;
+      height: 28px;
+      place-items: center;
+      border: 2px solid var(--ink);
+      background: #f4e5b8;
+      color: var(--ink);
+      font-size: 11px;
+      font-weight: 900;
+    }
+
+    .step-name { font-size: 11px; font-weight: 900; }
+    .step-sub { margin-top: 2px; color: #6c7183; font-size: 10px; }
+
+    .side-spacer { flex: 1; min-height: 20px; }
+
+    .side-note {
+      padding: 14px;
+      border: 2px solid var(--ink);
+      background: #fff2d0;
+      box-shadow: 3px 3px 0 #d8b348;
+      color: #596079;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .side-note strong { color: var(--ink); }
+    .side-note-icon { display: block; margin-bottom: 6px; font-size: 18px; }
+
+    .pixel-cat {
+      display: block;
+      width: 52px;
+      height: 52px;
+      margin: 0 0 10px;
+      filter: drop-shadow(3px 3px 0 #d8b348);
+      shape-rendering: crispEdges;
+    }
+
+    .game-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 16px;
+      color: #666d82;
+      font-size: 11px;
+    }
+
+    .footer-mark { display: flex; align-items: center; gap: 7px; }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 2px solid var(--ink);
+      background: #fffdf7;
+      box-shadow: 2px 2px 0 var(--ink);
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .status-pill::before {
+      width: 6px;
+      height: 6px;
+      background: #a6a69d;
+      content: "";
+    }
+
+    .status-pill.is-playing::before { background: #68a34e; }
+    .status-pill.is-pass::before { background: #558347; }
+    .status-pill.is-fail::before { background: var(--coral); }
+
+    /* Modal Result Overlay */
+    .overlay {
+      position: absolute;
+      z-index: 10;
+      inset: 0;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      padding: 28px;
+      border: 3px solid var(--ink);
+      background:
+        linear-gradient(rgb(185 163 121 / 10%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(185 163 121 / 10%) 1px, transparent 1px),
+        rgb(255 248 233 / 98%);
+      background-size: 17px 17px;
+      text-align: center;
+      animation: pop-in 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+    }
+
+    .overlay[hidden] { display: none; }
+
+    @keyframes pop-in {
+      from { opacity: 0; transform: scale(0.92); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .overlay-emoji {
+      display: grid;
+      width: 68px;
+      height: 68px;
+      margin-bottom: 14px;
+      place-items: center;
+      border: 3px solid var(--ink);
+      background: #e8bd4b;
+      box-shadow: 4px 4px 0 var(--ink);
+      color: var(--ink);
+      font-size: 32px;
+    }
+
+    .overlay.is-fail .overlay-emoji { background: #f3c0a8; }
+    .overlay.is-pass .overlay-emoji { background: #d8e7c9; }
+
+    .overlay-kicker {
+      margin: 0 0 8px;
+      color: #a0781e;
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
+
+    .overlay h2 { font-size: clamp(24px, 4vw, 34px); }
+    .overlay-copy { max-width: 400px; margin: 10px 0 20px; color: #5d6379; font-size: 12px; line-height: 1.6; }
+
+    .overlay-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .overlay-note { margin-top: 16px; color: #72768a; font-size: 11px; }
+
+    @keyframes popup-in {
+      from { transform: scale(.8); opacity: .3; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @media (max-width: 800px) {
+      .intro { align-items: flex-start; flex-direction: column; }
+      .disclaimer { max-width: none; }
+      .game-layout { grid-template-columns: minmax(0, 1fr) 240px; }
+    }
+
+    @media (max-width: 640px) {
+      .site-header { padding: 14px 18px; }
+      main { width: min(100% - 24px, 520px); margin: 24px auto; }
+      .intro { gap: 16px; margin-bottom: 18px; }
+      h1 { font-size: clamp(32px, 10vw, 46px); }
+      .game-layout { grid-template-columns: 1fr; gap: 14px; }
+      .game-card { min-height: 480px; }
+      .game-top { padding: 16px; }
+      .challenge-content { padding: 20px 16px; }
+      .side-card { padding: 16px; }
+      .steps { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .step-item { min-height: 68px; flex-direction: column; gap: 4px; padding: 6px; text-align: center; }
+      .step-sub { display: none; }
+      .side-spacer, .side-note { display: none; }
+    }
+
+    @media (max-width: 420px) {
+      .steps { grid-template-columns: repeat(2, 1fr); }
+      .header-controls { gap: 6px; }
+      .icon-btn span { display: none; }
+    }
+  </style>
+</head>
+<body class="crt">
+  <header class="site-header">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">✳</span>
+      <span>Human Check</span>
+    </div>
+    <div class="header-controls">
+      <button class="icon-btn" id="sound-toggle" type="button" aria-label="Toggle Sound Effects">
+        <span id="sound-icon">🔊</span> <span>SOUND ON</span>
+      </button>
+      <button class="icon-btn" id="crt-toggle" type="button" aria-label="Toggle CRT Visuals">
+        <span id="crt-icon">📺</span> <span>CRT</span>
+      </button>
+      <span class="version">CAPTCHA v2.0</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div>
+        <p class="eyebrow">A tiny arcade cabinet for your very human hands</p>
+        <h1 id="page-title">Human Check:<br><span>The Vibe Check CAPTCHA</span></h1>
+      </div>
+      <aside class="disclaimer" aria-label="Entertainment disclaimer">
+        <span class="disclaimer-icon" aria-hidden="true">ⓘ</span>
+        <span>Gamified CAPTCHA concept for entertainment. Synthesized audio enabled.</span>
+      </aside>
+    </section>
+
+    <section class="game-layout" aria-label="Vibe Check game">
+      <div>
+        <section class="game-card" id="game-card" aria-labelledby="challenge-title">
+          <div class="game-top">
+            <div class="game-topline">
+              <div class="round-label"><span class="live-dot" aria-hidden="true"></span><span id="round-label">Ready when you are</span></div>
+              <div class="timer" id="timer" aria-live="off" aria-label="45 seconds remaining">
+                <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="13" r="8.5" stroke="currentColor" stroke-width="2.2"/>
+                  <path d="M12 8v5l3 2M9 2h6" stroke="currentColor" stroke-width="2.2" stroke-linecap="square"/>
+                </svg>
+                <span id="timer-value">00:45</span>
+              </div>
+            </div>
+            <div class="progress-meta">
+              <span>Challenge progress</span>
+              <span id="progress-label">0 / 8</span>
+            </div>
+            <div class="progress-track" role="progressbar" aria-label="Challenge progress" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0">
+              <div class="progress-fill" id="progress-fill"></div>
+            </div>
+          </div>
+
+          <div class="challenge-content" id="challenge-content" aria-live="polite">
+            <p class="challenge-kicker" id="challenge-kicker">Humanity test · Start here</p>
+            <h2 id="challenge-title">Three quick checks.<br>Are you human?</h2>
+            <p class="challenge-copy" id="challenge-copy">Complete 3 easy mini-games to prove you are human. Clear those to unlock 5 fun extra levels! You have 45 seconds per round.</p>
+            <button class="primary-button" id="start-button" type="button">Start Check <span aria-hidden="true">→</span></button>
+          </div>
+
+          <div class="overlay" id="result-overlay" role="dialog" aria-modal="true" aria-labelledby="overlay-title" hidden>
+            <div class="overlay-emoji" id="overlay-emoji" aria-hidden="true">✨</div>
+            <p class="overlay-kicker" id="overlay-kicker">Human signal detected</p>
+            <h2 id="overlay-title">You passed the vibe check.</h2>
+            <p class="overlay-copy" id="overlay-copy">Your instincts are suspiciously human. On to the next one.</p>
+            <div class="overlay-actions" id="overlay-actions"></div>
+            <p class="overlay-note" id="overlay-note"></p>
+          </div>
+        </section>
+
+        <footer class="game-footer">
+          <span class="footer-mark"><span aria-hidden="true">✳</span> A playful CAPTCHA concept</span>
+          <span class="status-pill" id="status-pill">Waiting to begin</span>
+        </footer>
+      </div>
+
+      <aside class="side-card" aria-label="Challenge guide">
+        <h2 class="side-title">Game Guide</h2>
+        <p class="side-caption">Complete 3 main checks, then unlock 5 bonus rounds.</p>
+        <div class="steps" id="steps">
+          <div class="step-item" data-step="0">
+            <span class="step-number">01</span>
+            <span><span class="step-name">Untangle Cable</span><span class="step-sub">Drag plug to end</span></span>
+          </div>
+          <div class="step-item" data-step="1">
+            <span class="step-number">02</span>
+            <span><span class="step-name">Hold Elevator</span><span class="step-sub">Press & hold button</span></span>
+          </div>
+          <div class="step-item" data-step="2">
+            <span class="step-number">03</span>
+            <span><span class="step-name">Rewind Music</span><span class="step-sub">Slide to gold mark</span></span>
+          </div>
+          <div class="step-item bonus-step" data-step="3">
+            <span class="step-number">04</span>
+            <span><span class="step-name">Catch Camera</span><span class="step-sub">Click moving camera</span></span>
+          </div>
+          <div class="step-item bonus-step" data-step="4">
+            <span class="step-number">05</span>
+            <span><span class="step-name">Stop Microwave</span><span class="step-sub">Click in yellow zone</span></span>
+          </div>
+          <div class="step-item bonus-step" data-step="5">
+            <span class="step-number">06</span>
+            <span><span class="step-name">Close Popups</span><span class="step-sub">Click all X buttons</span></span>
+          </div>
+          <div class="step-item bonus-step" data-step="6">
+            <span class="step-number">07</span>
+            <span><span class="step-name">Type Message</span><span class="step-sub">Type phrase exactly</span></span>
+          </div>
+          <div class="step-item bonus-step" data-step="7">
+            <span class="step-number">08</span>
+            <span><span class="step-name">Dodge Laundry</span><span class="step-sub">Use arrow keys</span></span>
+          </div>
+        </div>
+        <div class="side-spacer"></div>
+        <div class="side-note">
+          <svg class="pixel-cat" viewBox="0 0 64 64" role="img" aria-label="A tiny pixel cat mascot" shape-rendering="crispEdges">
+            <rect x="8" y="8" width="16" height="16" fill="#172b67"/>
+            <rect x="40" y="8" width="16" height="16" fill="#172b67"/>
+            <rect x="16" y="16" width="8" height="8" fill="#e8b83f"/>
+            <rect x="40" y="16" width="8" height="8" fill="#e8b83f"/>
+            <rect x="8" y="20" width="48" height="24" fill="#172b67"/>
+            <rect x="16" y="44" width="32" height="12" fill="#294783"/>
+            <rect x="16" y="56" width="12" height="8" fill="#172b67"/>
+            <rect x="36" y="56" width="12" height="8" fill="#172b67"/>
+            <rect x="48" y="44" width="8" height="8" fill="#172b67"/>
+            <rect x="56" y="36" width="8" height="8" fill="#172b67"/>
+            <rect x="20" y="28" width="8" height="8" fill="#fff8e9"/>
+            <rect x="40" y="28" width="8" height="8" fill="#fff8e9"/>
+            <rect x="24" y="40" width="16" height="4" fill="#e8b83f"/>
+          </svg>
+          <span class="side-note-icon" aria-hidden="true">🧠</span>
+          <strong>Pro tip</strong><br>
+          Humans are allowed to overthink it. Bots usually don't know they should.
+        </div>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      // --- WEB AUDIO API SYNTHESIZER ---
+      class SoundEngine {
+        constructor() {
+          this.ctx = null;
+          this.muted = false;
+        }
+
+        init() {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (AudioCtx) this.ctx = new AudioCtx();
+          }
+          if (this.ctx && this.ctx.state === "suspended") {
+            this.ctx.resume();
+          }
+        }
+
+        playTone(freq, type = "sine", duration = 0.1, gainVal = 0.1, ramp = true) {
+          if (this.muted) return;
+          this.init();
+          if (!this.ctx) return;
+
+          try {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+
+            if (ramp) {
+              gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+            }
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + duration);
+          } catch (e) { console.error(e); }
+        }
+
+        playClick() {
+          this.playTone(600, "square", 0.04, 0.08);
+        }
+
+        playHover() {
+          this.playTone(320, "triangle", 0.03, 0.04);
+        }
+
+        playSuccess() {
+          if (this.muted) return;
+          this.init();
+          const notes = [440, 554.37, 659.25, 880];
+          notes.forEach((freq, idx) => {
+            setTimeout(() => this.playTone(freq, "triangle", 0.15, 0.12), idx * 80);
+          });
+        }
+
+        playFail() {
+          if (this.muted) return;
+          this.init();
+          const notes = [300, 260, 220, 180];
+          notes.forEach((freq, idx) => {
+            setTimeout(() => this.playTone(freq, "sawtooth", 0.18, 0.12), idx * 90);
+          });
+        }
+
+        playCamera() {
+          if (this.muted) return;
+          this.playTone(800, "square", 0.03, 0.1);
+          setTimeout(() => this.playTone(1200, "square", 0.05, 0.12), 40);
+        }
+
+        playBeep() {
+          this.playTone(1800, "sine", 0.35, 0.2);
+        }
+
+        playPop() {
+          this.playTone(500, "sine", 0.06, 0.12);
+        }
+
+        playStep() {
+          this.playTone(150 + Math.random() * 50, "triangle", 0.05, 0.08);
+        }
+
+        playHit() {
+          this.playTone(110, "sawtooth", 0.2, 0.18);
+        }
+
+        playHum(freq) {
+          if (this.muted) return null;
+          this.init();
+          if (!this.ctx) return null;
+          try {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+            gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            return { osc, gain, ctx: this.ctx };
+          } catch (e) { return null; }
+        }
+      }
+
+      const audio = new SoundEngine();
+
+      // Audio & UI Toggles
+      const soundToggleBtn = document.getElementById("sound-toggle");
+      const soundIcon = document.getElementById("sound-icon");
+      soundToggleBtn.addEventListener("click", () => {
+        audio.muted = !audio.muted;
+        soundIcon.textContent = audio.muted ? "🔇" : "🔊";
+        soundToggleBtn.querySelector("span:last-child").textContent = audio.muted ? "MUTED" : "SOUND ON";
+        audio.playClick();
+      });
+
+      const crtToggleBtn = document.getElementById("crt-toggle");
+      crtToggleBtn.addEventListener("click", () => {
+        document.body.classList.toggle("crt");
+        audio.playClick();
+      });
+
+      // Global Button Sound Bindings
+      document.addEventListener("pointerdown", (e) => {
+        if (e.target.closest("button, [role='button']")) {
+          audio.playClick();
+        }
+      });
+
+      const ROUND_SECONDS = 45;
+      const challenges = [
+        {
+          type: "wire",
+          label: "01 / Untangle Cable",
+          title: "Drag the plug to the finish line.",
+          copy: "Click or touch the plug and carefully follow the line all the way to the end marked PLUG IN.",
+          correct: "Great job! The cable is completely untangled.",
+          incorrect: "You went off the line! Try following the wire again."
+        },
+        {
+          type: "hold",
+          label: "02 / Hold Elevator",
+          title: "Press and hold the button.",
+          copy: "Click or tap and HOLD the button down until the progress bar fills completely. Do not let go early!",
+          correct: "Perfect! The elevator doors opened.",
+          incorrect: "You released too early! Hold the button until the bar fills."
+        },
+        {
+          type: "rewind",
+          label: "03 / Rewind Music",
+          title: "Drag slider to the gold target line.",
+          copy: "Move the slider knob until it lines up with the thick yellow target line on the track.",
+          correct: "Awesome! You rewound to the exact spot.",
+          incorrect: "Missed the mark! Try sliding closer to the gold line."
+        },
+        {
+          type: "target",
+          label: "04 / Catch Camera",
+          title: "Click the moving camera 5 times.",
+          copy: "The camera button moves around the box! Click or tap on the yellow camera box 5 times before time runs out.",
+          correct: "Great reflexes! You caught all 5 cameras.",
+          incorrect: "Time ran out! Try clicking the moving camera faster."
+        },
+        {
+          type: "microwave",
+          label: "05 / Stop Microwave",
+          title: "Click stop when in the yellow zone.",
+          copy: "Watch the black needle move across the bar and click STOP THE BEEP right when it enters the yellow section.",
+          correct: "Silent victory! You stopped it just in time.",
+          incorrect: "BEEP BEEP! You missed the yellow zone. Try again."
+        },
+        {
+          type: "popups",
+          label: "06 / Close Popups",
+          title: "Close all 5 chat popups.",
+          copy: "Click the 'X' button on each popup window that appears until you have closed 5 of them.",
+          correct: "All clear! You closed every popup.",
+          incorrect: "A popup got away! Keep clicking the X buttons."
+        },
+        {
+          type: "typing",
+          label: "07 / Type Message",
+          title: "Type the exact phrase shown below.",
+          copy: "Type the text exactly as shown into the box and press Enter or click 'SUBMIT'.",
+          correct: "Message sent accurately!",
+          incorrect: "Typo detected! Check your spelling and try typing it again."
+        },
+        {
+          type: "dodge",
+          label: "08 / Dodge Laundry",
+          title: "Dodge falling objects for 12 seconds.",
+          copy: "Use the LEFT / RIGHT buttons or Arrow Keys to move your player and dodge falling items.",
+          correct: "You made it! All chores successfully dodged.",
+          incorrect: "Got hit by falling laundry! Give it another try."
+        }
+      ];
+
+      const content = document.getElementById("challenge-content");
+      const timerDisplay = document.getElementById("timer-value");
+      const timer = document.getElementById("timer");
+      const roundLabel = document.getElementById("round-label");
+      const progressLabel = document.getElementById("progress-label");
+      const progressFill = document.getElementById("progress-fill");
+      const progressBar = document.querySelector('[role="progressbar"]');
+      const overlay = document.getElementById("result-overlay");
+      const overlayEmoji = document.getElementById("overlay-emoji");
+      const overlayKicker = document.getElementById("overlay-kicker");
+      const overlayTitle = document.getElementById("overlay-title");
+      const overlayCopy = document.getElementById("overlay-copy");
+      const overlayActions = document.getElementById("overlay-actions");
+      const overlayNote = document.getElementById("overlay-note");
+      const statusPill = document.getElementById("status-pill");
+      const gameCard = document.getElementById("game-card");
+      const stepItems = [...document.querySelectorAll(".step-item")];
+
+      let currentStep = -1;
+      let humanVerified = false;
+      let timerId = null;
+      let gameIntervals = [];
+      let gameTimeouts = [];
+      let dodgeKeyHandler = null;
+      let roundTimeLeft = ROUND_SECONDS;
+      let locked = false;
+
+      function triggerShake() {
+        gameCard.classList.remove("shake");
+        void gameCard.offsetWidth; // Force reflow
+        gameCard.classList.add("shake");
+      }
+
+      function setStatus(text, state) {
+        statusPill.textContent = text;
+        statusPill.className = "status-pill" + (state ? " is-" + state : "");
+      }
+
+      function updateProgress() {
+        const completed = Math.min(challenges.length, Math.max(0, currentStep));
+        progressLabel.textContent = completed + " / " + challenges.length;
+        progressFill.style.width = (completed / challenges.length * 100) + "%";
+        progressBar.setAttribute("aria-valuenow", String(completed));
+        stepItems.forEach((item, index) => {
+          item.classList.toggle("is-active", index === currentStep);
+          item.classList.toggle("is-done", index < currentStep);
+        });
+      }
+
+      function clearTimer() {
+        if (timerId !== null) {
+          window.clearInterval(timerId);
+          timerId = null;
+        }
+      }
+
+      function renderTimer() {
+        timerDisplay.textContent = "00:" + String(roundTimeLeft).padStart(2, "0");
+        timer.setAttribute("aria-label", roundTimeLeft + " seconds remaining");
+        const low = roundTimeLeft <= 8;
+        timer.classList.toggle("is-low", low);
+        if (low && roundTimeLeft > 0) audio.playTone(400, "sine", 0.05, 0.05);
+      }
+
+      function startTimer() {
+        clearTimer();
+        roundTimeLeft = ROUND_SECONDS;
+        renderTimer();
+        timerId = window.setInterval(() => {
+          roundTimeLeft -= 1;
+          renderTimer();
+          if (roundTimeLeft <= 0) {
+            finish(false, "Time's up! The human brain does have a deadline today.");
+          }
+        }, 1000);
+      }
+
+      function trackInterval(callback, delay) {
+        const id = window.setInterval(callback, delay);
+        gameIntervals.push(id);
+        return id;
+      }
+
+      function trackTimeout(callback, delay) {
+        const id = window.setTimeout(callback, delay);
+        gameTimeouts.push(id);
+        return id;
+      }
+
+      function clearGameTimers() {
+        gameIntervals.forEach(window.clearInterval);
+        gameTimeouts.forEach(window.clearTimeout);
+        gameIntervals = [];
+        gameTimeouts = [];
+        if (dodgeKeyHandler) {
+          window.removeEventListener("keydown", dodgeKeyHandler);
+          dodgeKeyHandler = null;
+        }
+      }
+
+      function makeButton(text, className, action) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = className;
+        button.textContent = text;
+        button.addEventListener("click", action);
+        return button;
+      }
+
+      function showOverlay(type, title, message, primaryText, primaryAction, secondaryText, secondaryAction) {
+        clearTimer();
+        overlay.hidden = false;
+        overlay.className = "overlay is-" + type;
+        overlayEmoji.textContent = type === "pass" ? "✦" : type === "fail" ? "🫠" : "✳";
+        overlayKicker.textContent = type === "pass" ? "Human signal detected" : type === "fail" ? "A suspiciously robot moment" : "Vibe check complete";
+        overlayTitle.textContent = title;
+        overlayCopy.textContent = message;
+        overlayActions.replaceChildren();
+        overlayActions.append(makeButton(primaryText, "primary-button", primaryAction));
+        if (secondaryText) overlayActions.append(makeButton(secondaryText, "secondary-button", secondaryAction));
+        overlayNote.textContent = type === "fail" ? "No page reload required. Current round is ready." : "";
+        overlay.querySelector("button").focus({ preventScroll: true });
+      }
+
+      function finish(passed, message) {
+        if (locked) return;
+        locked = true;
+        clearTimer();
+        clearGameTimers();
+
+        if (passed) {
+          audio.playSuccess();
+          currentStep += 1;
+          updateProgress();
+          setStatus(currentStep === challenges.length ? "All puzzles cleared" : humanVerified ? "Human verified · Round cleared" : "Round cleared", "pass");
+          if (currentStep === challenges.length) {
+            roundLabel.textContent = "All puzzles complete";
+            showOverlay("pass", "Eight for eight. Iconic.", "You proved you are not a robot and cleared all five bonus puzzles. Incredible human energy.", "Play again", restartGame);
+          } else if (currentStep === 3 && !humanVerified) {
+            humanVerified = true;
+            setStatus("Human verified · Bonus ready", "pass");
+            roundLabel.textContent = "Humanity confirmed";
+            showOverlay("pass", "You're not a robot. Verified!", "You cleared the three human checks. You can stop here knowing the vibe check is passed—or keep going with bonus puzzles.", "Continue bonus puzzles", startChallenge, "Restart game", restartGame);
+          } else {
+            roundLabel.textContent = "Round " + currentStep + " cleared";
+            showOverlay("pass", "Nice. That's human.", message, "Next challenge", startChallenge, "Restart game", restartGame);
+          }
+        } else {
+          audio.playFail();
+          triggerShake();
+          setStatus(humanVerified ? "Human verified · Retry bonus round" : "Round needs a retry", "fail");
+          showOverlay("fail", "Not quite human enough.", message, "Try this round again", startChallenge, "Restart game", restartGame);
+        }
+      }
+
+      function renderChallenge(challenge, gameMarkup) {
+        content.innerHTML =
+          '<p class="challenge-kicker">' + challenge.label + '</p>' +
+          '<h2 id="challenge-title">' + challenge.title + '</h2>' +
+          '<p class="challenge-copy">' + challenge.copy + '</p>' + gameMarkup;
+      }
+
+      function startChallenge() {
+        overlay.hidden = true;
+        clearGameTimers();
+        locked = false;
+        if (currentStep < 0) currentStep = 0;
+        if (currentStep >= challenges.length) {
+          restartGame();
+          return;
+        }
+        const challenge = challenges[currentStep];
+        roundLabel.textContent = challenge.label;
+        setStatus(humanVerified ? "Human verified · Bonus puzzles" : "Challenge in progress", "playing");
+        updateProgress();
+        const games = {
+          wire: drawWireChallenge,
+          hold: drawHoldGame,
+          rewind: drawRewindGame,
+          target: drawTargetGame,
+          microwave: drawMicrowaveGame,
+          popups: drawPopupGame,
+          typing: drawTypingGame,
+          dodge: drawDodgeGame
+        };
+        games[challenge.type](challenge);
+        startTimer();
+        const firstControl = content.querySelector("button, input, [tabindex='0']");
+        if (firstControl) firstControl.focus({ preventScroll: true });
+      }
+
+      // --- 1. WIRE GAME ---
+      function drawWireChallenge(challenge) {
+        const points = [{ x: 38, y: 117 }];
+        for (let index = 1; index <= 4; index += 1) {
+          points.push({ x: 38 + index * 88, y: 42 + Math.floor(Math.random() * 145) });
+        }
+        points.push({ x: 450, y: 117 + Math.floor(Math.random() * 33) - 16 });
+        points.push({ x: 500, y: 117 });
+        points.push({ x: 562, y: 117 });
+        let pathData = "M " + points[0].x + " " + points[0].y;
+        for (let index = 1; index < points.length - 2; index += 1) {
+          const midpoint = {
+            x: (points[index].x + points[index + 1].x) / 2,
+            y: (points[index].y + points[index + 1].y) / 2
+          };
+          pathData += " Q " + points[index].x + " " + points[index].y + " " + midpoint.x + " " + midpoint.y;
+        }
+        pathData += " Q " + points[points.length - 2].x + " " + points[points.length - 2].y + " " + points[points.length - 1].x + " " + points[points.length - 1].y;
+
+        renderChallenge(challenge,
+          '<div class="wire-board"><svg viewBox="0 0 600 235" role="img" aria-label="A random tangled headphone cable. Drag the plug along its path." preserveAspectRatio="none">' +
+            '<path id="wire-path" class="wire-track-shadow" d="' + pathData + '"/>' +
+            '<path class="wire-track" d="' + pathData + '"/>' +
+            '<path id="wire-progress" class="wire-progress" d="' + pathData + '"/>' +
+            '<circle class="wire-start" cx="38" cy="117" r="13"/><circle class="wire-end" cx="562" cy="117" r="12"/>' +
+            '<text x="23" y="153" font-size="11" fill="#77786f" font-family="monospace">START</text>' +
+            '<text x="535" y="153" font-size="11" fill="#77786f" font-family="monospace">PLUG IN</text>' +
+            '<circle class="wire-knob-halo" id="wire-halo" cx="38" cy="117" r="19"/>' +
+            '<circle class="wire-knob" id="wire-knob" cx="38" cy="117" r="17" role="slider" tabindex="0" aria-label="Cable tracer. Drag to follow the wire." aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"/></svg></div>' +
+          '<div class="wire-instructions"><strong>Drag the circle along the blue path to the end.</strong><span class="wire-hint" id="wire-hint">0% completed</span></div>');
+        setupWireGame(challenge);
+      }
+
+      function setupWireGame(challenge) {
+        const svg = content.querySelector("svg");
+        const path = document.getElementById("wire-path");
+        const knob = document.getElementById("wire-knob");
+        const halo = document.getElementById("wire-halo");
+        const progressPath = document.getElementById("wire-progress");
+        const hint = document.getElementById("wire-hint");
+        const totalLength = path.getTotalLength();
+        let tracing = false;
+        let progress = 0;
+        let lastPointer = null;
+        let lastAudioStep = 0;
+        const samples = [];
+        for (let length = 0; length <= totalLength; length += 3) {
+          samples.push({ length, point: path.getPointAtLength(length) });
+        }
+
+        function pointFromEvent(event) {
+          const point = svg.createSVGPoint();
+          point.x = event.clientX;
+          point.y = event.clientY;
+          return point.matrixTransform(svg.getScreenCTM().inverse());
+        }
+
+        function nearestPoint(point) {
+          let nearest = samples[0];
+          let distance = Infinity;
+          for (const sample of samples) {
+            const dx = sample.point.x - point.x;
+            const dy = sample.point.y - point.y;
+            const nextDistance = dx * dx + dy * dy;
+            if (nextDistance < distance) {
+              distance = nextDistance;
+              nearest = sample;
+            }
+          }
+          return { length: nearest.length, distance: Math.sqrt(distance), point: nearest.point };
+        }
+
+        function updatePosition(length) {
+          const point = path.getPointAtLength(length);
+          knob.setAttribute("cx", String(point.x));
+          knob.setAttribute("cy", String(point.y));
+          halo.setAttribute("cx", String(point.x));
+          halo.setAttribute("cy", String(point.y));
+          const percentage = Math.min(100, Math.floor(length / totalLength * 100));
+          hint.textContent = percentage + "% untangled";
+          knob.setAttribute("aria-valuenow", String(percentage));
+          progressPath.style.strokeDasharray = totalLength + " " + totalLength;
+          progressPath.style.strokeDashoffset = String(totalLength - length);
+
+          if (percentage - lastAudioStep >= 5) {
+            audio.playTone(250 + percentage * 5, "triangle", 0.04, 0.06);
+            lastAudioStep = percentage;
+          }
+        }
+
+        function failTrace() {
+          tracing = false;
+          finish(false, challenge.incorrect);
+        }
+
+        knob.addEventListener("pointerdown", (event) => {
+          if (locked || currentStep !== 0) return;
+          event.preventDefault();
+          tracing = true;
+          lastPointer = { x: event.clientX, y: event.clientY };
+          knob.setPointerCapture(event.pointerId);
+          audio.playTone(300, "sine", 0.05, 0.08);
+        });
+
+        knob.addEventListener("pointermove", (event) => {
+          if (!tracing || locked || currentStep !== 0) return;
+          event.preventDefault();
+          const pointer = pointFromEvent(event);
+          const nearest = nearestPoint(pointer);
+          const screenScale = Math.min(svg.clientWidth / 600, svg.clientHeight / 235);
+          if (nearest.distance > 46) { failTrace(); return; }
+          const pointerTravel = Math.hypot(event.clientX - lastPointer.x, event.clientY - lastPointer.y);
+          const permittedJump = (pointerTravel / Math.max(screenScale, 0.1)) * 1.8 + 7;
+          if (nearest.length > progress + permittedJump) { failTrace(); return; }
+          progress = Math.max(progress, nearest.length);
+          lastPointer = { x: event.clientX, y: event.clientY };
+          updatePosition(progress);
+          if (progress >= totalLength - 4) {
+            tracing = false;
+            finish(true, challenge.correct);
+          }
+        });
+
+        knob.addEventListener("pointerup", () => { tracing = false; });
+        knob.addEventListener("pointercancel", () => { tracing = false; });
+        knob.addEventListener("keydown", (event) => {
+          if (locked || currentStep !== 0) return;
+          const increments = { ArrowRight: 14, ArrowDown: 14, ArrowLeft: -14, ArrowUp: -14 };
+          if (!(event.key in increments)) return;
+          event.preventDefault();
+          progress = Math.max(0, Math.min(totalLength, progress + increments[event.key]));
+          updatePosition(progress);
+          if (progress >= totalLength - 4) finish(true, challenge.correct);
+        });
+
+        updatePosition(0);
+      }
+
+      // --- 2. HOLD ELEVATOR GAME ---
+      function drawHoldGame(challenge) {
+        const required = 1550 + Math.floor(Math.random() * 800);
+        renderChallenge(challenge,
+          '<div class="meter-track"><div class="meter-fill" id="hold-fill"></div></div>' +
+          '<button class="hold-button" id="hold-button" type="button">PRESS AND HOLD HERE</button>' +
+          '<p class="game-instruction" id="hold-status">Keep holding the button down until the bar is full!</p>');
+        const button = document.getElementById("hold-button");
+        const fill = document.getElementById("hold-fill");
+        const status = document.getElementById("hold-status");
+        let elapsed = 0;
+        let interval = null;
+        let humSound = null;
+
+        const stop = () => {
+          if (interval !== null) window.clearInterval(interval);
+          interval = null;
+          if (humSound) { humSound.osc.stop(); humSound = null; }
+          button.classList.remove("is-holding");
+          if (elapsed < required && !locked) {
+            elapsed = 0;
+            fill.style.width = "0%";
+            status.textContent = "You let go too early! Click and hold again.";
+            audio.playFail();
+          }
+        };
+
+        const startHolding = () => {
+          if (locked || interval !== null) return;
+          button.classList.add("is-holding");
+          status.textContent = "Holding button down...";
+          humSound = audio.playHum(120);
+
+          interval = window.setInterval(() => {
+            elapsed += 40;
+            fill.style.width = Math.min(100, elapsed / required * 100) + "%";
+            if (humSound && humSound.osc) humSound.osc.frequency.setValueAtTime(120 + (elapsed / required) * 180, humSound.ctx.currentTime);
+
+            if (elapsed >= required) {
+              window.clearInterval(interval);
+              interval = null;
+              if (humSound) { humSound.osc.stop(); humSound = null; }
+              finish(true, challenge.correct);
+            }
+          }, 40);
+        };
+
+        button.addEventListener("pointerdown", (e) => {
+          if (locked) return;
+          e.preventDefault();
+          button.setPointerCapture(e.pointerId);
+          startHolding();
+        });
+        button.addEventListener("pointerup", stop);
+        button.addEventListener("pointercancel", stop);
+        button.addEventListener("keydown", (e) => {
+          if ((e.key === " " || e.key === "Enter") && !e.repeat) { e.preventDefault(); startHolding(); }
+        });
+        button.addEventListener("keyup", (e) => {
+          if (e.key === " " || e.key === "Enter") stop();
+        });
+      }
+
+      // --- 3. REWIND SONG GAME ---
+      function drawRewindGame(challenge) {
+        const target = 35 + Math.floor(Math.random() * 36);
+        const seconds = 7 + Math.floor(Math.random() * 8);
+        renderChallenge(challenge,
+          '<div class="rewind-control"><div class="rewind-labels"><span>START</span><span style="color:#a0781e;">GOLD TARGET MARK</span></div>' +
+          '<input id="rewind-slider" type="range" min="0" max="100" value="0" aria-label="Drag slider to the target line">' +
+          '<div class="rewind-labels"><span>0%</span><span>100%</span></div></div>' +
+          '<p class="game-instruction" id="rewind-status">Drag the slider until it aligns with the yellow vertical mark.</p>');
+        const slider = document.getElementById("rewind-slider");
+        const status = document.getElementById("rewind-status");
+        slider.style.background = "linear-gradient(90deg, #d8d0ba 0%, #d8d0ba " + (target - 2) + "%, #e8b83f " + (target - 2) + "%, #e8b83f " + (target + 2) + "%, #d8d0ba " + (target + 2) + "%, #d8d0ba 100%)";
+
+        let lastVal = 0;
+        slider.addEventListener("input", () => {
+          const val = Number(slider.value);
+          if (Math.abs(val - lastVal) > 3) {
+            audio.playTone(200 + val * 4, "sawtooth", 0.03, 0.05);
+            lastVal = val;
+          }
+          const distance = Math.abs(val - target);
+          status.textContent = distance <= 5 ? "Almost there... drop it on the yellow line!" : val < target ? "Move slider right towards yellow line." : "Move slider left towards yellow line.";
+          if (distance <= 3) finish(true, challenge.correct);
+        });
+      }
+
+      // --- 4. PAPARAZZI CAMERAS ---
+      function drawTargetGame(challenge) {
+        renderChallenge(challenge,
+          '<div class="playfield target-board" id="target-board"><button class="moving-target" id="moving-target" type="button" aria-label="Catch the runaway camera">📸</button></div>' +
+          '<div class="hit-counter" id="hit-counter">CAUGHT 0 / 5 CAMERAS</div>');
+        const board = document.getElementById("target-board");
+        const target = document.getElementById("moving-target");
+        const counter = document.getElementById("hit-counter");
+        let hits = 0;
+
+        const moveTarget = () => {
+          const maxX = Math.max(0, board.clientWidth - target.offsetWidth);
+          const maxY = Math.max(0, board.clientHeight - target.offsetHeight);
+          target.style.left = Math.floor(Math.random() * maxX) + "px";
+          target.style.top = Math.floor(Math.random() * maxY) + "px";
+        };
+
+        moveTarget();
+        target.addEventListener("click", () => {
+          if (locked) return;
+          audio.playCamera();
+          hits += 1;
+          counter.textContent = "CAUGHT " + hits + " / 5 CAMERAS";
+          if (hits >= 5) finish(true, challenge.correct);
+          else {
+            target.textContent = ["📸", "😼", "📸", "🙈", "📸"][Math.floor(Math.random() * 5)];
+            moveTarget();
+          }
+        });
+      }
+
+      // --- 5. MIDNIGHT MICROWAVE ---
+      function drawMicrowaveGame(challenge) {
+        const duration = 4300 + Math.floor(Math.random() * 1900);
+        renderChallenge(challenge,
+          '<div class="microwave-clock" id="microwave-clock">00:00</div>' +
+          '<div class="microwave-track"><div class="microwave-needle" id="microwave-needle"></div></div>' +
+          '<button class="stop-button" id="stop-button" type="button">STOP NOW</button>' +
+          '<p class="game-instruction" id="microwave-status">Click STOP when the black indicator is inside the yellow zone.</p>');
+        const clock = document.getElementById("microwave-clock");
+        const needle = document.getElementById("microwave-needle");
+        const status = document.getElementById("microwave-status");
+        const started = performance.now();
+
+        trackInterval(() => {
+          if (locked) return;
+          const elapsed = performance.now() - started;
+          const remaining = Math.max(0, duration - elapsed);
+          const percent = Math.min(100, elapsed / duration * 100);
+          needle.style.left = percent + "%";
+          clock.textContent = "00:" + (Math.ceil(remaining / 100) / 10).toFixed(1).padStart(4, "0");
+          if (remaining <= 0) {
+            audio.playBeep();
+            finish(false, challenge.incorrect);
+          }
+        }, 50);
+
+        document.getElementById("stop-button").addEventListener("click", () => {
+          const remaining = duration - (performance.now() - started);
+          if (remaining >= 350 && remaining <= 1800) {
+            finish(true, challenge.correct);
+          } else if (remaining > 1800) {
+            audio.playFail();
+            status.textContent = "Too early! Wait for the indicator to enter the yellow region.";
+          } else {
+            audio.playBeep();
+            status.textContent = "Too late! The indicator passed the yellow region.";
+          }
+        });
+      }
+
+      // --- 6. POPUPS ESCAPE ---
+      function drawPopupGame(challenge) {
+        const messages = [
+          "Before you go, quick question...",
+          "This reminds me of a story.",
+          "Wait, did I tell you about lunch?",
+          "One last thing (for real this time).",
+          "Anyway, what are your weekend plans?"
+        ];
+        renderChallenge(challenge,
+          '<div class="playfield popups-field" id="popups-field"></div>' +
+          '<div class="hit-counter" id="popup-counter">GOODBYES SENT: 0 / 5</div>');
+        const field = document.getElementById("popups-field");
+        const counter = document.getElementById("popup-counter");
+        let closed = 0;
+
+        const spawn = () => {
+          audio.playPop();
+          const note = document.createElement("div");
+          note.className = "popup-note";
+          note.textContent = messages[(closed + Math.floor(Math.random() * messages.length)) % messages.length];
+          note.style.left = Math.floor(Math.random() * 55) + "%";
+          note.style.top = Math.floor(Math.random() * 60) + "%";
+
+          const close = document.createElement("button");
+          close.type = "button";
+          close.className = "popup-close";
+          close.setAttribute("aria-label", "Close one last thing");
+          close.textContent = "×";
+
+          close.addEventListener("click", () => {
+            if (locked) return;
+            audio.playClick();
+            note.remove();
+            closed += 1;
+            counter.textContent = "GOODBYES SENT: " + closed + " / 5";
+            if (closed >= 5) finish(true, challenge.correct);
+            else trackTimeout(spawn, 180);
+          });
+
+          note.append(close);
+          field.replaceChildren(note);
+        };
+        spawn();
+      }
+
+      // --- 7. VOICE-NOTE TYPING ---
+      function drawTypingGame(challenge) {
+        const phrases = [
+          "sorry just saw this i was staring at the fridge",
+          "on my way i have not found my shoes",
+          "haha totally normal thing to say out loud",
+          "voice note incoming because thumbs are tired",
+          "i opened my phone and forgot why"
+        ];
+        const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+        renderChallenge(challenge,
+          '<div class="typing-prompt" id="typing-prompt"></div>' +
+          '<div class="typing-row"><input class="typing-input" id="typing-input" type="text" autocomplete="off" aria-label="Type the voice note message">' +
+          '<button class="send-button" id="send-button" type="button">SUBMIT</button></div>' +
+          '<p class="game-instruction" id="typing-status">Type the exact sentence above into the text box.</p>');
+
+        document.getElementById("typing-prompt").textContent = phrase;
+        const input = document.getElementById("typing-input");
+        const status = document.getElementById("typing-status");
+
+        input.addEventListener("input", () => audio.playStep());
+
+        const send = () => {
+          if (input.value.trim().toLowerCase() === phrase) {
+            finish(true, challenge.correct);
+          } else {
+            audio.playFail();
+            status.textContent = "Not an exact match! Double-check spelling and letters.";
+            input.focus();
+          }
+        };
+
+        document.getElementById("send-button").addEventListener("click", send);
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") send();
+        });
+      }
+
+      function drawDodgeGame(challenge) {
+        renderChallenge(challenge,
+          '<div class="playfield dodge-field" id="dodge-field" tabindex="0" aria-label="Dodge falling laundry using arrow keys or buttons">' +
+          '<div class="dodge-player" id="dodge-player" aria-label="You, avoiding responsibility">🧍</div></div>' +
+          '<div class="dodge-controls"><button class="direction-button" id="left-button" type="button" aria-label="Move left">◀ LEFT</button>' +
+          '<button class="direction-button" id="right-button" type="button" aria-label="Move right">RIGHT ▶</button></div>' +
+          '<p class="game-instruction" id="dodge-status">Use buttons or Left/Right Arrow keys to dodge falling items for 12 seconds.</p>');
+
+        const field = document.getElementById("dodge-field");
+        const player = document.getElementById("dodge-player");
+        const status = document.getElementById("dodge-status");
+        const objects = [];
+        let playerX = Math.max(0, (field.clientWidth - 48) / 2);
+        let elapsed = 0;
+        let spawnCountdown = 0;
+        let lives = 3;
+        let invulnerableUntil = 0;
+        const duration = 12000;
+
+        const move = (direction) => {
+          playerX = Math.max(0, Math.min(field.clientWidth - 48, playerX + direction * 26));
+          player.style.left = playerX + "px";
+          audio.playStep();
+        };
+
+        player.style.left = playerX + "px";
+
+        dodgeKeyHandler = (e) => {
+          if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+            e.preventDefault();
+            move(e.key === "ArrowLeft" ? -1 : 1);
+          }
+        };
+
+        window.addEventListener("keydown", dodgeKeyHandler);
+        document.getElementById("left-button").addEventListener("click", () => move(-1));
+        document.getElementById("right-button").addEventListener("click", () => move(1));
+
+        trackInterval(() => {
+          if (locked) return;
+          elapsed += 50;
+          spawnCountdown += 50;
+
+          if (spawnCountdown >= 800) {
+            spawnCountdown = 0;
+            const item = document.createElement("span");
+            item.className = "falling-object";
+            item.textContent = ["🧦", "👕", "🧺", "🧹", "🩳"][Math.floor(Math.random() * 5)];
+            const x = Math.floor(Math.random() * Math.max(1, field.clientWidth - 32));
+            item.style.left = x + "px";
+            field.append(item);
+            objects.push({ element: item, x, y: -34, speed: 4.4 + Math.random() * 1.5 });
+          }
+
+          for (let idx = objects.length - 1; idx >= 0; idx -= 1) {
+            const obj = objects[idx];
+            obj.y += obj.speed;
+            obj.element.style.top = obj.y + "px";
+
+            if (obj.y > field.clientHeight - 60 && obj.y < field.clientHeight - 8 && Math.abs(obj.x + 16 - (playerX + 24)) < 36 && Date.now() >= invulnerableUntil) {
+              obj.element.remove();
+              objects.splice(idx, 1);
+              lives -= 1;
+              invulnerableUntil = Date.now() + 700;
+              audio.playHit();
+              triggerShake();
+              player.classList.add("is-hit");
+              trackTimeout(() => player.classList.remove("is-hit"), 200);
+
+              if (lives <= 0) {
+                finish(false, challenge.incorrect);
+                return;
+              }
+            }
+
+            if (obj.y > field.clientHeight) {
+              obj.element.remove();
+              objects.splice(idx, 1);
+            }
+          }
+
+          status.textContent = "SURVIVED " + Math.floor(elapsed / 1000) + " / 12 SEC · LIVES " + "♥".repeat(lives);
+          if (elapsed >= duration) finish(true, challenge.correct);
+        }, 50);
+      }
+
+      function restartGame() {
+        clearTimer();
+        clearGameTimers();
+        currentStep = -1;
+        humanVerified = false;
+        locked = false;
+        overlay.hidden = true;
+        roundLabel.textContent = "Ready when you are";
+        timerDisplay.textContent = "00:45";
+        timer.setAttribute("aria-label", "45 seconds remaining");
+        timer.classList.remove("is-low");
+        progressLabel.textContent = "0 / " + challenges.length;
+        progressFill.style.width = "0%";
+        progressBar.setAttribute("aria-valuenow", "0");
+        stepItems.forEach((item) => item.classList.remove("is-active", "is-done"));
+
+        content.innerHTML = '<p class="challenge-kicker">Humanity test · Start here</p><h2 id="challenge-title">Three quick checks.<br>Are you human?</h2><p class="challenge-copy">Complete 3 easy mini-games to prove you are human. Clear those to unlock 5 fun extra levels! You have 45 seconds per round.</p><button class="primary-button" id="start-button" type="button">Start Check <span aria-hidden="true">→</span></button>';
+        document.getElementById("start-button").addEventListener("click", startChallenge);
+        setStatus("Waiting to begin", "");
+      }
+
+      document.getElementById("start-button").addEventListener("click", startChallenge);
+    })();
+  </script>
+</body>
+</html>
